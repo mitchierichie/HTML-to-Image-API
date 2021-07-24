@@ -29,7 +29,8 @@ app.use(express.json({ limit: '50mb' }));
 					// open new browser page
 					const screenshotOptions = { type: 'png' };
 					const page = await browser.newPage();
-					const content = req.body.css ? `<style>${req.body.css}</style>` : req.body.html
+					const content = req.body.css ? `<style>${req.body.css}</style>${req.body.html}` : req.body.html
+
 					// fill content with user submitted html and css
 					await page.setContent(
 						content,
