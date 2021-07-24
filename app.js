@@ -11,7 +11,7 @@ const app = express();
 // setup boilerplate
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 app.use(cors())
-app.use(express.json({limit: '50mb'}));
+app.use(express.json({ limit: '50mb' }));
 
 // initialize puppeteer function
 (async () => {
@@ -29,21 +29,24 @@ app.use(express.json({limit: '50mb'}));
 					// open new browser page
 					const screenshotOptions = { type: 'png' };
 					const page = await browser.newPage();
+					const content = req.body.css ? `<style>${req.body.css}</style>` : req.body.html
 					// fill content with user submitted html and css
-					await page.setContent(req.body.html);
+					await page.setContent(
+						content,
+						{ waitUntil: 'networkidle0' }
+					);
 
 					if (req.body.clip) {
 						screenshotOptions.clip = req.body.clip
 					}
 
-					
 					const selector = req.body.selector || 'div'
 					// define content area to take screenshot
-					const content = await page.$(selector);
+					const element = await page.$(selector);
 					// take screenshot in content area, save buffer
-					const buffer = await content.screenshot();
+					const buffer = await element.screenshot();
 					// close browser page
-					await page.close();
+					// await page.close();
 					// send back base64 string of image
 
 					res.writeHead(200, {
