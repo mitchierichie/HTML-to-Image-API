@@ -47,9 +47,8 @@ app.use(express.json({ limit: '50mb' }));
 					// take screenshot in content area, save buffer
 					const buffer = await element.screenshot();
 					// close browser page
-					// await page.close();
+					await page.close();
 					// send back base64 string of image
-
 					res.writeHead(200, {
 						'Content-Type': 'image/png',
 						'Content-Length': buffer.length
