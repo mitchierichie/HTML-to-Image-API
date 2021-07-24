@@ -1,47 +1,57 @@
 // require modules
 require('dotenv').config();
 const express = require('express');
+var cors = require('cors')
 const puppeteer = require('puppeteer');
+const { response } = require('express');
 
 // initialize app
 const app = express();
 
 // setup boilerplate
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+app.use(cors())
+app.use(express.json({limit: '50mb'}));
 
 // initialize puppeteer function
 (async () => {
 	// launch headless browser
-	const browser = await puppeteer.launch({ headless: true, args: [ '--no-sandbox' ] });
+	const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
 
 	// post request is made to render
 	app.post('/render', (req, res) => {
 		// make sure authorization is present
 		if (req.headers.authorization === process.env.AUTH_KEY) {
 			// make sure both html and css are included
-			if (req.body.html && req.body.css) {
+			if (req.body.html) {
 				// generate image function
 				(async () => {
 					// open new browser page
+					const screenshotOptions = { type: 'png' };
 					const page = await browser.newPage();
 					// fill content with user submitted html and css
-					await page.setContent(
-						`<style>
-							${req.body.css}
-						</style>
-						<div style="height: fit-content;width: fit-content">
-							${req.body.html}
-						</div>`
-					);
+					await page.setContent(req.body.html);
+
+					if (req.body.clip) {
+						screenshotOptions.clip = req.body.clip
+					}
+
+					
+					const selector = req.body.selector || 'div'
 					// define content area to take screenshot
-					const content = await page.$('div');
+					const content = await page.$(selector);
 					// take screenshot in content area, save buffer
-					const buffer = await content.screenshot({ type: 'png' });
+					const buffer = await content.screenshot();
 					// close browser page
 					await page.close();
 					// send back base64 string of image
-					res.status(200).send('data:image/png;base64,' + buffer.toString('base64'));
+
+					res.writeHead(200, {
+						'Content-Type': 'image/png',
+						'Content-Length': buffer.length
+					});
+					res.end(buffer);
+					// res.status(200).json({dataURL: });
 				})();
 			} else {
 				// if fields missing
